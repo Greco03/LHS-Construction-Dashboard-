@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lexington High School Building Project — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #003262;
+    --navy-dark: #00244a;
+    --navy-light: #0a4a8a;
+    --accent: #c4a35a;
+    --accent-light: #e8d5a0;
+    --white: #ffffff;
+    --off-white: #f4f5f7;
+    --gray-100: #eceef1;
+    --gray-200: #d4d8de;
+    --gray-400: #8d95a0;
+    --gray-600: #5a6270;
+    --gray-800: #2d3340;
+    --green: #1a8754;
+    --green-bg: #e6f4ed;
+    --amber: #b8860b;
+    --amber-bg: #fef3d0;
+    --blue-bg: #e1ecf7;
+    --red: #c0392b;
+    --red-bg: #fce4e4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--off-white);
+    color: var(--gray-800);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 60%, #001a33 100%);
+    border-radius: 16px;
+    padding: 40px 44px 36px;
+    color: var(--white);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(196,163,90,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent));
+  }
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+  .header h1 span {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .updated {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.55);
+    margin-top: 14px;
+    font-weight: 500;
+  }
+  .header-badge {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 14px 20px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .header-badge .label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    margin-bottom: 4px;
+  }
+  .header-badge .value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.7rem;
+    color: var(--white);
+  }
+
+  /* ── TOP STATS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 22px 24px;
+    border: 1px solid var(--gray-100);
+    transition: box-shadow 0.25s;
+  }
+  .stat-card:hover {
+    box-shadow: 0 4px 20px rgba(0,50,98,0.08);
+  }
+  .stat-card .label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 8px;
+  }
+  .stat-card .value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    color: var(--navy);
+  }
+  .stat-card .sub {
+    font-size: 0.78rem;
+    color: var(--gray-400);
+    margin-top: 4px;
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    background: var(--white);
+    border-radius: 14px;
+    border: 1px solid var(--gray-100);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .section-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--navy);
+  }
+  .section-header .pill {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 99px;
+    background: var(--blue-bg);
+    color: var(--navy);
+  }
+  .section-body {
+    padding: 20px 28px 28px;
+  }
+
+  /* ── BUDGET TABLE ── */
+  .budget-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .budget-table thead th {
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    padding: 0 12px 12px;
+    border-bottom: 2px solid var(--gray-100);
+  }
+  .budget-table thead th:not(:first-child) { text-align: right; }
+  .budget-table tbody td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: middle;
+  }
+  .budget-table tbody td:not(:first-child) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .budget-table tbody tr:last-child td { border-bottom: none; }
+  .budget-table .row-total td {
+    font-weight: 700;
+    color: var(--navy);
+    border-top: 2px solid var(--navy);
+    border-bottom: none;
+    padding-top: 16px;
+  }
+  .budget-table .cat-name {
+    font-weight: 500;
+    color: var(--gray-800);
+  }
+  .type-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .type-badge.gmp { background: var(--navy); color: var(--white); }
+  .type-badge.soft { background: var(--gray-100); color: var(--gray-600); }
+
+  /* ── PROGRESS BARS ── */
+  .progress-track {
+    width: 100%;
+    height: 8px;
+    background: var(--gray-100);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 1s cubic-bezier(.22,1,.36,1);
+  }
+  .progress-fill.navy { background: var(--navy); }
+  .progress-fill.green { background: var(--green); }
+  .progress-fill.amber { background: var(--amber); }
+  .progress-fill.accent { background: var(--accent); }
+
+  /* ── STATUS BADGES ── */
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+  }
+  .status.complete { background: var(--green-bg); color: var(--green); }
+  .status.in-progress { background: var(--amber-bg); color: var(--amber); }
+  .status.upcoming { background: var(--gray-100); color: var(--gray-400); }
+  .status.pre-bid { background: var(--blue-bg); color: var(--navy-light); }
+  .status::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ── SCHEDULE TIMELINE ── */
+  .phase-list { display: flex; flex-direction: column; gap: 14px; }
+  .phase-item {
+    display: grid;
+    grid-template-columns: 200px 1fr 90px 80px;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .phase-item:last-child { border-bottom: none; }
+  .phase-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--gray-800);
+  }
+  .phase-dates {
+    font-size: 0.78rem;
+    color: var(--gray-400);
+    text-align: right;
+  }
+  .phase-pct {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── MILESTONES ── */
+  .milestone-list { display: flex; flex-direction: column; }
+  .milestone-item {
+    display: grid;
+    grid-template-columns: 130px 1fr 100px;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .milestone-item:last-child { border-bottom: none; }
+  .milestone-date {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--navy);
+    font-variant-numeric: tabular-nums;
+  }
+  .milestone-name {
+    font-size: 0.88rem;
+    color: var(--gray-800);
+  }
+
+  /* ── PACKAGES ── */
+  .pkg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+  }
+  .pkg-table thead th {
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    padding: 0 10px 12px;
+    border-bottom: 2px solid var(--gray-100);
+  }
+  .pkg-table thead th:nth-child(n+2):not(:last-child) { text-align: right; }
+  .pkg-table tbody td {
+    padding: 14px 10px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: middle;
+  }
+  .pkg-table tbody td:nth-child(n+2):nth-child(-n+4) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .pkg-table tbody tr:last-child td { border-bottom: none; }
+  .pkg-table .row-total td {
+    font-weight: 700;
+    color: var(--navy);
+    border-top: 2px solid var(--navy);
+    border-bottom: none;
+  }
+
+  /* ── DONUT CHART ── */
+  .donut-section {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+  .donut-container {
+    width: 200px;
+    height: 200px;
+    flex-shrink: 0;
+  }
+  .donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.84rem;
+  }
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .legend-label { color: var(--gray-600); }
+  .legend-value { font-weight: 700; color: var(--gray-800); margin-left: auto; font-variant-numeric: tabular-nums; }
+
+  /* ── CONSTRUCTION SUB-SCHEDULE ── */
+  .sub-section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 0.95rem;
+    color: var(--navy);
+    margin: 28px 0 14px;
+    padding-top: 20px;
+    border-top: 1px solid var(--gray-100);
+  }
+  .sub-section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.75rem;
+    color: var(--gray-400);
+  }
+  .footer a { color: var(--navy); text-decoration: none; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .phase-item { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .phase-item .progress-track { grid-column: 1 / -1; }
+    .milestone-item { grid-template-columns: 110px 1fr 90px; }
+  }
+  @media (max-width: 600px) {
+    .dashboard { padding: 16px 12px 40px; }
+    .header { padding: 28px 24px 24px; border-radius: 12px; }
+    .header h1 { font-size: 1.5rem; }
+    .stats-row { grid-template-columns: 1fr; }
+    .section-body { padding: 16px 18px 22px; }
+    .budget-table, .pkg-table { font-size: 0.8rem; }
+    .donut-section { flex-direction: column; align-items: flex-start; }
+    .phase-item { grid-template-columns: 1fr; }
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-in {
+    animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) both;
+  }
+  .delay-1 { animation-delay: 0.08s; }
+  .delay-2 { animation-delay: 0.16s; }
+  .delay-3 { animation-delay: 0.24s; }
+  .delay-4 { animation-delay: 0.32s; }
+  .delay-5 { animation-delay: 0.40s; }
+  .delay-6 { animation-delay: 0.48s; }
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <!-- HEADER -->
+  <div class="header animate-in">
+    <div class="header-top">
+      <div>
+        <h1>
+          <span>Lexington Public Schools</span>
+          Lexington High School<br>Building Project
+        </h1>
+        <div class="updated">Last updated: March 2025</div>
+      </div>
+      <div class="header-badge">
+        <div class="label">Total Project Budget</div>
+        <div class="value">$633.0M</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP STATS -->
+  <div class="stats-row">
+    <div class="stat-card animate-in delay-1">
+      <div class="label">Spent to Date</div>
+      <div class="value">$15.4M</div>
+      <div class="sub">2.4% of total budget</div>
+    </div>
+    <div class="stat-card animate-in delay-2">
+      <div class="label">Remaining</div>
+      <div class="value">$617.7M</div>
+      <div class="sub">97.6% of total budget</div>
+    </div>
+    <div class="stat-card animate-in delay-3">
+      <div class="label">Current Phase</div>
+      <div class="value" style="font-size:1.2rem;">Design Dev.</div>
+      <div class="sub">74% complete</div>
+    </div>
+    <div class="stat-card animate-in delay-4">
+      <div class="label">Target Completion</div>
+      <div class="value" style="font-size:1.2rem;">End 2030</div>
+      <div class="sub">Site complete</div>
+    </div>
+  </div>
+
+  <!-- BUDGET OVERVIEW DONUT + LEGEND -->
+  <div class="section animate-in delay-3">
+    <div class="section-header">
+      <h2>Budget Allocation</h2>
+      <span class="pill">$633.0M Total</span>
+    </div>
+    <div class="section-body">
+      <div class="donut-section">
+        <div class="donut-container">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <!-- Construction GMP: 84.4% -->
+            <circle cx="100" cy="100" r="75" fill="none" stroke="#003262" stroke-width="28"
+              stroke-dasharray="397.6 74.4" stroke-dashoffset="118" />
+            <!-- A/E Services: 7.3% -->
+            <circle cx="100" cy="100" r="75" fill="none" stroke="#0a4a8a" stroke-width="28"
+              stroke-dasharray="34.4 437.6" stroke-dashoffset="-279.6" />
+            <!-- Admin OPM: 2.3% -->
+            <circle cx="100" cy="100" r="75" fill="none" stroke="#c4a35a" stroke-width="28"
+              stroke-dasharray="10.8 461.2" stroke-dashoffset="-314" />
+            <!-- FF&E: 2.4% -->
+            <circle cx="100" cy="100" r="75" fill="none" stroke="#e8d5a0" stroke-width="28"
+              stroke-dasharray="11.3 460.7" stroke-dashoffset="-324.8" />
+            <!-- Misc + Feasibility + Contingency + CM: 3.6% -->
+            <circle cx="100" cy="100" r="75" fill="none" stroke="#8d95a0" stroke-width="28"
+              stroke-dasharray="17.9 454.1" stroke-dashoffset="-336.1" />
+            <!-- Center text -->
+            <text x="100" y="94" text-anchor="middle" font-family="DM Serif Display, serif" font-size="22" fill="#003262">84.4%</text>
+            <text x="100" y="114" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#8d95a0">Construction</text>
+          </svg>
+        </div>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#003262"></div>
+            <span class="legend-label">Construction (GMP)</span>
+            <span class="legend-value">$534.1M</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#0a4a8a"></div>
+            <span class="legend-label">A/E Services</span>
+            <span class="legend-value">$46.3M</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#c4a35a"></div>
+            <span class="legend-label">Administration (OPM)</span>
+            <span class="legend-value">$14.7M</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#e8d5a0"></div>
+            <span class="legend-label">FF&E / Technology</span>
+            <span class="legend-value">$15.0M</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#8d95a0"></div>
+            <span class="legend-label">Other (Misc, Feasibility, Contingency, CM)</span>
+            <span class="legend-value">$22.9M</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUDGET BY CATEGORY -->
+  <div class="section animate-in delay-4">
+    <div class="section-header">
+      <h2>Budget by Category</h2>
+    </div>
+    <div class="section-body" style="overflow-x:auto;">
+      <table class="budget-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Budget</th>
+            <th>Spent</th>
+            <th>Remaining</th>
+            <th style="width:120px">% Spent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="cat-name">Construction Budget (GMP)</span><span class="type-badge gmp">GMP</span></td>
+            <td>$534,130,000</td>
+            <td>$0</td>
+            <td>$534,130,000</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;color:var(--gray-400)">0%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill navy" style="width:0%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="cat-name">A/E Services</span><span class="type-badge soft">Soft</span></td>
+            <td>$46,278,000</td>
+            <td>$5,750,000</td>
+            <td>$40,528,000</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;color:var(--gray-400)">12.4%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill accent" style="width:12.4%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="cat-name">Administration (OPM)</span><span class="type-badge soft">Soft</span></td>
+            <td>$14,724,896</td>
+            <td>$2,850,000</td>
+            <td>$11,874,896</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;color:var(--gray-400)">19.4%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill accent" style="width:19.4%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="cat-name">FF&E / Technology</span><span class="type-badge soft">Soft</span></td>
+            <td>$14,979,110</td>
+            <td>$0</td>
+            <td>$14,979,110</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;color:var(--gray-400)">0%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill navy" style="width:0%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="cat-name">Misc Project Costs</span><span class="type-badge soft">Soft</span></td>
+            <td>$11,800,000</td>
+            <td>$450,000</td>
+            <td>$11,350,000</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;color:var(--gray-400)">3.8%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill accent" style="width:3.8%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="cat-name">Feasibility Study</span><span class="type-badge soft">Soft</span></td>
+            <td>$5,983,228</td>
+            <td>$5,983,228</td>
+            <td>$0</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;color:var(--green)">100%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill green" style="width:100%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="cat-name">Owner's Contingency</span><span class="type-badge soft">Soft</span></td>
+            <td>$4,425,100</td>
+            <td>$0</td>
+            <td>$4,425,100</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;color:var(--gray-400)">0%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill navy" style="width:0%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="cat-name">CM Pre-Con Services</span><span class="type-badge soft">Soft</span></td>
+            <td>$720,000</td>
+            <td>$350,000</td>
+            <td>$370,000</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;color:var(--gray-400)">48.6%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill amber" style="width:48.6%"></div></div>
+              </div>
+            </td>
+          </tr>
+          <tr class="row-total">
+            <td>Total</td>
+            <td>$633,040,334</td>
+            <td>$15,383,228</td>
+            <td>$617,657,106</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                <span style="font-size:0.78rem;font-weight:700;color:var(--navy)">2.4%</span>
+                <div class="progress-track" style="width:80px"><div class="progress-fill navy" style="width:2.4%"></div></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CONSTRUCTION PACKAGES -->
+  <div class="section animate-in delay-5">
+    <div class="section-header">
+      <h2>Construction Packages</h2>
+      <span class="pill">Budget vs Actual</span>
+    </div>
+    <div class="section-body" style="overflow-x:auto;">
+      <table class="pkg-table">
+        <thead>
+          <tr>
+            <th>Package</th>
+            <th>Budget</th>
+            <th>Actual</th>
+            <th>Variance</th>
+            <th>Bid Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:500">Feasibility & Bridge DD</td>
+            <td>$11,825,000</td>
+            <td>$11,400,000</td>
+            <td style="color:var(--green)">+$425,000</td>
+            <td>Complete</td>
+            <td><span class="status complete">Complete</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500">ERP 1 – Site Prep</td>
+            <td>$35,000,000</td>
+            <td>—</td>
+            <td>—</td>
+            <td>May 2026</td>
+            <td><span class="status pre-bid">Pre-Bid</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500">ERP 2 – Foundations & Steel</td>
+            <td>$75,000,000</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Nov 2026</td>
+            <td><span class="status pre-bid">Pre-Bid</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500">ERP 3 – Long Lead Equip.</td>
+            <td>$25,000,000</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Mar 2027</td>
+            <td><span class="status pre-bid">Pre-Bid</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:500">Full GMP – Remaining</td>
+            <td>$513,939,834</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Jul 2027</td>
+            <td><span class="status pre-bid">Pre-Bid</span></td>
+          </tr>
+          <tr class="row-total">
+            <td>Total</td>
+            <td>$660,764,834</td>
+            <td>$11,400,000</td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PROJECT SCHEDULE -->
+  <div class="section animate-in delay-5">
+    <div class="section-header">
+      <h2>Project Schedule</h2>
+    </div>
+    <div class="section-body">
+      <div class="sub-section-title" style="margin-top:0;border-top:none;padding-top:0;">Project Phases</div>
+      <div class="phase-list">
+        <div class="phase-item">
+          <div class="phase-name">Schematic Design (SD)</div>
+          <div>
+            <div class="progress-track"><div class="progress-fill green" style="width:100%"></div></div>
+          </div>
+          <div class="phase-pct">100%</div>
+          <div><span class="status complete">Complete</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Design Development (DD)</div>
+          <div>
+            <div class="progress-track"><div class="progress-fill amber" style="width:74%"></div></div>
+          </div>
+          <div class="phase-pct">74%</div>
+          <div><span class="status in-progress">In Progress</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Construction Docs (CD)</div>
+          <div>
+            <div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div>
+          </div>
+          <div class="phase-pct">0%</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Construction – Phase 1</div>
+          <div>
+            <div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div>
+          </div>
+          <div class="phase-pct">0%</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Construction – Phase 2</div>
+          <div>
+            <div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div>
+          </div>
+          <div class="phase-pct">0%</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Closeout</div>
+          <div>
+            <div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div>
+          </div>
+          <div class="phase-pct">0%</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+      </div>
+
+      <div class="sub-section-title">Construction Phase 1</div>
+      <div class="phase-list">
+        <div class="phase-item">
+          <div class="phase-name">Mobilize on Site</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Jul–Aug 2026</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">ERP #1 – Sitework / Piles</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Aug 2026–Jan 2027</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Foundations</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Jan–May 2027</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Structural Steel</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">May–Oct 2027</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">MEP / FP Rough-In</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Nov 2027–Mar 2029</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Building Exterior</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Aug 2027–Mar 2029</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Interior Finishes</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Apr 2028–Jul 2029</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Commissioning</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Apr–Aug 2029</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Substantial Completion</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Jun 2029</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+      </div>
+
+      <div class="sub-section-title">Phase 2 — Site & Demo</div>
+      <div class="phase-list">
+        <div class="phase-item">
+          <div class="phase-name">Demo of Existing School</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Oct 2029–Jan 2030</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Fields / Concessions</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Apr–Nov 2030</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-name">Final C of O</div>
+          <div><div class="progress-track"><div class="progress-fill navy" style="width:0%"></div></div></div>
+          <div class="phase-dates">Oct–Nov 2030</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY MILESTONES -->
+  <div class="section animate-in delay-6">
+    <div class="section-header">
+      <h2>Key Procurement Milestones</h2>
+    </div>
+    <div class="section-body">
+      <div class="milestone-list">
+        <div class="milestone-item">
+          <div class="milestone-date">Apr 8, 2026</div>
+          <div class="milestone-name">ERP 1 Plans Issued</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">May 26, 2026</div>
+          <div class="milestone-name">Mini-GMP 1 (Site Prep)</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">Sep 24, 2026</div>
+          <div class="milestone-name">ERP 2 Plans Issued</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">Nov 4, 2026</div>
+          <div class="milestone-name">Mini-GMP 2 (Foundations & Steel)</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">Feb 25, 2027</div>
+          <div class="milestone-name">ERP 3 Plans Issued</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">Mar 24, 2027</div>
+          <div class="milestone-name">Mini-GMP 3 (Long Lead Equip.)</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">May 14, 2027</div>
+          <div class="milestone-name">100% Construction Documents</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">~Jul 14, 2027</div>
+          <div class="milestone-name">Full GMP Established</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">Sep 2027</div>
+          <div class="milestone-name">Final GMP</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">Fall 2029</div>
+          <div class="milestone-name">Move-In / Occupancy</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+        <div class="milestone-item">
+          <div class="milestone-date">End 2030</div>
+          <div class="milestone-name">Site Complete</div>
+          <div><span class="status upcoming">Upcoming</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Lexington High School Building Project &middot; Lexington Public Schools &middot; Lexington, MA<br>
+    For questions, visit <a href="https://lps.lexingtonma.org" target="_blank">lps.lexingtonma.org</a>
+  </div>
+
+</div>
+</body>
+</html>
