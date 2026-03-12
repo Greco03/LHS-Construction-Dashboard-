@@ -139,125 +139,200 @@
 <div class="dashboard" id="dashboard">
   <div class="loading-overlay" id="loading">
     <div class="spinner"></div>
-    <div class="loading-text">Loading dashboard data from Google Sheets…</div>
+    <div class="loading-text">Loading dashboard data…</div>
   </div>
 </div>
 <script>
-const SHEET_ID = '1ksZV7TgmVz5jwudp085qSdpoPPgdgCU2';
-const TABS = {
+var SHEET_ID = '1ksZV7TgmVz5jwudp085qSdpoPPgdgCU2';
+var TABS = {
   budget: 'Budget by Category',
   packages: 'Construction Packages',
   schedule: 'Project Schedule',
   milestones: 'Key Milestones'
 };
 
-function sheetURL(tab) {
-  return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(tab);
-}
+// Uses Google Visualization API — works with "Anyone with the link" sharing
+// Returns CALCULATED values for formulas (not formula text)
+function fetchSheet(tabName) {
+  return new Promise(function(resolve, reject) {
+    var callbackName = 'cb_' + Math.random().toString(36).substr(2, 9);
+    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+      '/gviz/tq?tqx=out:json;responseHandler:' + callbackName +
+      '&sheet=' + encodeURIComponent(tabName);
 
-function parseCSV(text) {
-  var lines = [], cur = '', inQ = false;
-  for (var i = 0; i < text.length; i++) {
-    var c = text[i];
-    if (c === '"') { inQ = !inQ; cur += c; }
-    else if (c === '\n' && !inQ) { lines.push(cur); cur = ''; }
-    else if (c === '\r' && !inQ) {}
-    else cur += c;
-  }
-  if (cur) lines.push(cur);
-  return lines.map(function(line) {
-    var cells = [], cell = '', q = false;
-    for (var i = 0; i < line.length; i++) {
-      var c = line[i];
-      if (c === '"') { if (q && line[i+1] === '"') { cell += '"'; i++; } else q = !q; }
-      else if (c === ',' && !q) { cells.push(cell.trim()); cell = ''; }
-      else cell += c;
-    }
-    cells.push(cell.trim());
-    return cells;
+    window[callbackName] = function(response) {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      if (response.status === 'error') {
+        reject(new Error('Failed to load ' + tabName));
+        return;
+      }
+      var rows = [];
+      var table = response.table;
+      for (var r = 0; r < table.rows.length; r++) {
+        var row = [];
+        for (var c = 0; c < table.rows[r].c.length; c++) {
+          var cell = table.rows[r].c[c];
+          if (cell === null || cell.v === null || typeof cell.v === 'undefined') {
+            row.push('');
+          } else {
+            // Use formatted value for dates/strings, raw value for numbers
+            if (typeof cell.v === 'number') {
+              row.push(cell.v);
+            } else if (cell.f) {
+              row.push(cell.f);
+            } else {
+              row.push(cell.v);
+            }
+          }
+        }
+        rows.push(row);
+      }
+      resolve(rows);
+    };
+
+    var script = document.createElement('script');
+    script.src = url;
+    script.onerror = function() {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      reject(new Error('Network error loading ' + tabName));
+    };
+    document.body.appendChild(script);
   });
-}
-
-async function fetchSheet(tab) {
-  var r = await fetch(sheetURL(tab));
-  if (!r.ok) throw new Error('Failed to load ' + tab);
-  return parseCSV(await r.text());
 }
 
 function fmt(n) { var v = parseFloat(n); return isNaN(v) ? '—' : '$' + Math.round(v).toLocaleString('en-US'); }
 function fmtM(n) { var v = parseFloat(n); if (isNaN(v)) return '—'; if (v >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B'; if (v >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M'; if (v >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K'; return '$' + v.toLocaleString('en-US'); }
 function pct(n) { var v = parseFloat(n); return isNaN(v) ? '0%' : (v * 100).toFixed(1) + '%'; }
 function pctN(n) { var v = parseFloat(n); return isNaN(v) ? 0 : v * 100; }
-function sCls(s) { if (!s) return 'upcoming'; var l = s.toLowerCase().trim(); if (l === 'complete') return 'complete'; if (l === 'in progress') return 'in-progress'; if (l === 'pre-bid') return 'pre-bid'; return 'upcoming'; }
+function sCls(s) { if (!s) return 'upcoming'; var l = s.toString().toLowerCase().trim(); if (l === 'complete') return 'complete'; if (l === 'in progress') return 'in-progress'; if (l === 'pre-bid') return 'pre-bid'; return 'upcoming'; }
 function pCol(p) { if (p >= 100) return 'green'; if (p >= 40) return 'amber'; if (p > 0) return 'accent'; return 'navy'; }
-function tBadge(t) { if (!t) return ''; return t.toLowerCase().includes('gmp') ? '<span class="type-badge gmp">GMP</span>' : '<span class="type-badge soft">Soft</span>'; }
+function tBadge(t) { if (!t) return ''; return t.toString().toLowerCase().includes('gmp') ? '<span class="type-badge gmp">GMP</span>' : '<span class="type-badge soft">Soft</span>'; }
+function val(v) { if (v === '' || v === null || typeof v === 'undefined') return ''; return v; }
 
 async function build() {
   var el = document.getElementById('dashboard');
   try {
-    var results = await Promise.all([fetchSheet(TABS.budget), fetchSheet(TABS.packages), fetchSheet(TABS.schedule), fetchSheet(TABS.milestones)]);
+    var results = await Promise.all([
+      fetchSheet(TABS.budget),
+      fetchSheet(TABS.packages),
+      fetchSheet(TABS.schedule),
+      fetchSheet(TABS.milestones)
+    ]);
     var bRaw = results[0], pkRaw = results[1], sRaw = results[2], mRaw = results[3];
 
+    // Budget
     var bStart = 0;
-    for (var i = 0; i < bRaw.length; i++) { if (bRaw[i][0] && bRaw[i][0].toLowerCase().includes('category')) { bStart = i + 1; break; } }
+    for (var i = 0; i < bRaw.length; i++) {
+      var cell = val(bRaw[i][0]).toString().toLowerCase();
+      if (cell.includes('category')) { bStart = i + 1; break; }
+    }
     var bRows = [], bTotal = null;
-    for (var i = bStart; i < bRaw.length; i++) { var r = bRaw[i]; if (!r[0] || !r[0].trim()) continue; if (r[0].toUpperCase() === 'TOTAL') bTotal = r; else bRows.push(r); }
+    for (var i = bStart; i < bRaw.length; i++) {
+      var r = bRaw[i];
+      var name = val(r[0]).toString().trim();
+      if (!name) continue;
+      if (name.toUpperCase() === 'TOTAL') bTotal = r;
+      else bRows.push(r);
+    }
     var totBudget = bTotal ? parseFloat(bTotal[1]) : 0;
     var totSpent = bTotal ? parseFloat(bTotal[2]) : 0;
     var totRem = bTotal ? parseFloat(bTotal[3]) : 0;
     var totPct = bTotal ? parseFloat(bTotal[4]) : 0;
 
+    // Packages
     var pStart = 0;
-    for (var i = 0; i < pkRaw.length; i++) { if (pkRaw[i][0] && pkRaw[i][0].toLowerCase().includes('package')) { pStart = i + 1; break; } }
+    for (var i = 0; i < pkRaw.length; i++) {
+      var cell = val(pkRaw[i][0]).toString().toLowerCase();
+      if (cell.includes('package')) { pStart = i + 1; break; }
+    }
     var pRows = [], pTotal = null;
-    for (var i = pStart; i < pkRaw.length; i++) { var r = pkRaw[i]; if (!r[0] || !r[0].trim()) continue; if (r[0].toUpperCase() === 'TOTAL') pTotal = r; else pRows.push(r); }
+    for (var i = pStart; i < pkRaw.length; i++) {
+      var r = pkRaw[i];
+      var name = val(r[0]).toString().trim();
+      if (!name) continue;
+      if (name.toUpperCase() === 'TOTAL') pTotal = r;
+      else pRows.push(r);
+    }
 
+    // Schedule
     var sPhases = [], sP1 = [], sP2 = [], sec = null;
     for (var i = 0; i < sRaw.length; i++) {
       var row = sRaw[i];
-      var c = (row[0] || '').toUpperCase().trim();
+      var c = val(row[0]).toString().toUpperCase().trim();
       if (c.includes('PROJECT PHASES') || c === 'PHASE') { sec = 'phases'; continue; }
-      if (c.includes('PHASE 1') || c.includes('CONSTRUCTION SCHEDULE')) { if (!sec || sec === 'phases') { sec = 'p1'; continue; } else { sec = 'p2'; continue; } }
+      if (c.includes('PHASE 1') || c.includes('CONSTRUCTION SCHEDULE')) {
+        if (!sec || sec === 'phases') { sec = 'p1'; continue; }
+        else { sec = 'p2'; continue; }
+      }
       if (c.includes('PHASE 2')) { sec = 'p2'; continue; }
-      if (c === 'ACTIVITY' || !row[0] || !row[0].trim() || c === 'PROJECT SCHEDULE') continue;
-      var item = { name: row[0], start: row[1]||'', end: row[2]||'', status: row[3]||'', pct: row[4]||0 };
+      if (c === 'ACTIVITY' || !val(row[0]).toString().trim() || c === 'PROJECT SCHEDULE') continue;
+      var item = {
+        name: val(row[0]),
+        start: val(row[1]),
+        end: val(row[2]),
+        status: val(row[3]),
+        pct: row[4] !== '' ? row[4] : 0
+      };
       if (sec === 'phases') sPhases.push(item);
       else if (sec === 'p1') sP1.push(item);
       else if (sec === 'p2') sP2.push(item);
     }
 
+    // Milestones
     var mStart = 0;
-    for (var i = 0; i < mRaw.length; i++) { if (mRaw[i][0] && mRaw[i][0].toLowerCase().includes('date')) { mStart = i + 1; break; } }
+    for (var i = 0; i < mRaw.length; i++) {
+      var cell = val(mRaw[i][0]).toString().toLowerCase();
+      if (cell.includes('date')) { mStart = i + 1; break; }
+    }
     var ms = [];
-    for (var i = mStart; i < mRaw.length; i++) { var r = mRaw[i]; if (!r[0] || !r[0].trim()) continue; ms.push({ date: r[0], name: r[1]||'', status: r[2]||'' }); }
+    for (var i = mStart; i < mRaw.length; i++) {
+      var r = mRaw[i];
+      if (!val(r[0]).toString().trim()) continue;
+      ms.push({ date: val(r[0]), name: val(r[1]), status: val(r[2]) });
+    }
 
+    // Current phase
     var curPhase = 'Upcoming', curPct = 0;
-    for (var j = 0; j < sPhases.length; j++) { if (sPhases[j].status.toLowerCase().trim() === 'in progress') { curPhase = sPhases[j].name; curPct = pctN(sPhases[j].pct); break; } }
+    for (var j = 0; j < sPhases.length; j++) {
+      if (val(sPhases[j].status).toString().toLowerCase().trim() === 'in progress') {
+        curPhase = sPhases[j].name;
+        curPct = pctN(sPhases[j].pct);
+        break;
+      }
+    }
     var targetComp = ms.length > 0 ? ms[ms.length - 1].date : 'TBD';
 
-    var gmpR = bRows.find(function(r) { return r[0].toLowerCase().includes('construction budget'); });
+    // Donut
+    var gmpR = bRows.find(function(r) { return val(r[0]).toString().toLowerCase().includes('construction budget'); });
     var gmpV = gmpR ? parseFloat(gmpR[1]) : 0;
-    var aeR = bRows.find(function(r) { return r[0].toLowerCase().includes('a/e'); });
+    var aeR = bRows.find(function(r) { return val(r[0]).toString().toLowerCase().includes('a/e'); });
     var aeV = aeR ? parseFloat(aeR[1]) : 0;
-    var adR = bRows.find(function(r) { return r[0].toLowerCase().includes('administration'); });
+    var adR = bRows.find(function(r) { return val(r[0]).toString().toLowerCase().includes('administration'); });
     var adV = adR ? parseFloat(adR[1]) : 0;
-    var ffR = bRows.find(function(r) { return r[0].toLowerCase().includes('ff&e') || r[0].toLowerCase().includes('ffe'); });
+    var ffR = bRows.find(function(r) { var n = val(r[0]).toString().toLowerCase(); return n.includes('ff&e') || n.includes('ffe') || n.includes('ff\\u0026e') || n.includes('technology'); });
     var ffV = ffR ? parseFloat(ffR[1]) : 0;
     var otV = totBudget - gmpV - aeV - adV - ffV;
     var gmpPct = totBudget > 0 ? ((gmpV / totBudget) * 100).toFixed(1) : 0;
     var CC = 2 * Math.PI * 75;
     var segs = [{v:gmpV,c:'#003262'},{v:aeV,c:'#0a4a8a'},{v:adV,c:'#c4a35a'},{v:ffV,c:'#e8d5a0'},{v:otV,c:'#8d95a0'}];
     var dSVG = '', off = CC * 0.25;
-    for (var s = 0; s < segs.length; s++) { var d = (segs[s].v / totBudget) * CC; dSVG += '<circle cx="100" cy="100" r="75" fill="none" stroke="' + segs[s].c + '" stroke-width="28" stroke-dasharray="' + d + ' ' + (CC-d) + '" stroke-dashoffset="' + off + '" />'; off -= d; }
+    for (var s = 0; s < segs.length; s++) {
+      var d = totBudget > 0 ? (segs[s].v / totBudget) * CC : 0;
+      dSVG += '<circle cx="100" cy="100" r="75" fill="none" stroke="' + segs[s].c + '" stroke-width="28" stroke-dasharray="' + d + ' ' + (CC-d) + '" stroke-dashoffset="' + off + '" />';
+      off -= d;
+    }
 
     var now = new Date();
     var mon = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     var upd = mon[now.getMonth()] + ' ' + now.getFullYear();
 
+    // Build table HTML
     var budgetHTML = '';
     for (var i = 0; i < bRows.length; i++) {
       var r = bRows[i]; var p = pctN(r[4]);
-      budgetHTML += '<tr><td><span class="cat-name">' + r[0] + '</span>' + tBadge(r[5]) + '</td><td>' + fmt(r[1]) + '</td><td>' + fmt(r[2]) + '</td><td>' + fmt(r[3]) + '</td><td><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><span style="font-size:0.78rem;color:' + (p>=100?'var(--green)':'var(--gray-400)') + '">' + pct(r[4]) + '</span><div class="progress-track" style="width:80px"><div class="progress-fill ' + pCol(p) + '" style="width:' + Math.min(p,100) + '%"></div></div></div></td></tr>';
+      budgetHTML += '<tr><td><span class="cat-name">' + val(r[0]) + '</span>' + tBadge(r[5]) + '</td><td>' + fmt(r[1]) + '</td><td>' + fmt(r[2]) + '</td><td>' + fmt(r[3]) + '</td><td><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><span style="font-size:0.78rem;color:' + (p>=100?'var(--green)':'var(--gray-400)') + '">' + pct(r[4]) + '</span><div class="progress-track" style="width:80px"><div class="progress-fill ' + pCol(p) + '" style="width:' + Math.min(p,100) + '%"></div></div></div></td></tr>';
     }
     if (bTotal) {
       budgetHTML += '<tr class="row-total"><td>Total</td><td>' + fmt(bTotal[1]) + '</td><td>' + fmt(bTotal[2]) + '</td><td>' + fmt(bTotal[3]) + '</td><td><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><span style="font-size:0.78rem;font-weight:700;color:var(--navy)">' + pct(bTotal[4]) + '</span><div class="progress-track" style="width:80px"><div class="progress-fill navy" style="width:' + Math.min(pctN(bTotal[4]),100) + '%"></div></div></div></td></tr>';
@@ -266,22 +341,22 @@ async function build() {
     var pkgHTML = '';
     for (var i = 0; i < pRows.length; i++) {
       var r = pRows[i];
-      var v = (r[2] && r[3] && !isNaN(parseFloat(r[3]))) ? parseFloat(r[3]) : null;
+      var v = (r[2] !== '' && r[3] !== '' && !isNaN(parseFloat(r[3]))) ? parseFloat(r[3]) : null;
       var vs = v !== null ? (v >= 0 ? '<span style="color:var(--green)">+' + fmt(v) + '</span>' : '<span style="color:var(--red)">' + fmt(v) + '</span>') : '—';
-      pkgHTML += '<tr><td style="font-weight:500">' + r[0] + '</td><td>' + fmt(r[1]) + '</td><td>' + (r[2] && !isNaN(parseFloat(r[2])) ? fmt(r[2]) : '—') + '</td><td>' + vs + '</td><td>' + (r[4]||'—') + '</td><td><span class="status ' + sCls(r[5]) + '">' + (r[5]||'Upcoming') + '</span></td></tr>';
+      pkgHTML += '<tr><td style="font-weight:500">' + val(r[0]) + '</td><td>' + fmt(r[1]) + '</td><td>' + (r[2] !== '' && !isNaN(parseFloat(r[2])) ? fmt(r[2]) : '—') + '</td><td>' + vs + '</td><td>' + (val(r[4]) || '—') + '</td><td><span class="status ' + sCls(r[5]) + '">' + (val(r[5]) || 'Upcoming') + '</span></td></tr>';
     }
     if (pTotal) {
-      pkgHTML += '<tr class="row-total"><td>Total</td><td>' + fmt(pTotal[1]) + '</td><td>' + (pTotal[2] && !isNaN(parseFloat(pTotal[2])) ? fmt(pTotal[2]) : '—') + '</td><td></td><td></td><td></td></tr>';
+      pkgHTML += '<tr class="row-total"><td>Total</td><td>' + fmt(pTotal[1]) + '</td><td>' + (pTotal[2] !== '' && !isNaN(parseFloat(pTotal[2])) ? fmt(pTotal[2]) : '—') + '</td><td></td><td></td><td></td></tr>';
     }
 
     function phaseHTML(arr, showDates) {
       var h = '';
       for (var i = 0; i < arr.length; i++) {
         var p = arr[i]; var v = pctN(p.pct);
-        h += '<div class="phase-item"><div class="phase-name">' + p.name + '</div><div><div class="progress-track"><div class="progress-fill ' + pCol(v) + '" style="width:' + Math.min(v,100) + '%"></div></div></div>';
-        if (showDates) { h += '<div class="phase-dates">' + p.start + (p.end ? '–' + p.end : '') + '</div>'; }
+        h += '<div class="phase-item"><div class="phase-name">' + val(p.name) + '</div><div><div class="progress-track"><div class="progress-fill ' + pCol(v) + '" style="width:' + Math.min(v,100) + '%"></div></div></div>';
+        if (showDates) { h += '<div class="phase-dates">' + val(p.start) + (val(p.end) ? '–' + val(p.end) : '') + '</div>'; }
         else { h += '<div class="phase-pct">' + v.toFixed(0) + '%</div>'; }
-        h += '<div><span class="status ' + sCls(p.status) + '">' + p.status + '</span></div></div>';
+        h += '<div><span class="status ' + sCls(p.status) + '">' + val(p.status) + '</span></div></div>';
       }
       return h;
     }
@@ -293,14 +368,12 @@ async function build() {
 
     el.innerHTML =
       '<div class="header animate-in"><div class="header-top"><div><h1><span>Lexington Public Schools</span>Lexington High School<br>Building Project</h1><div class="updated">Data refreshed: ' + upd + '</div></div><div class="header-badge"><div class="label">Total Project Budget</div><div class="value">' + fmtM(totBudget) + '</div></div></div></div>' +
-
       '<div class="stats-row">' +
       '<div class="stat-card animate-in delay-1"><div class="label">Spent to Date</div><div class="value">' + fmtM(totSpent) + '</div><div class="sub">' + pct(totPct) + ' of total budget</div></div>' +
       '<div class="stat-card animate-in delay-2"><div class="label">Remaining</div><div class="value">' + fmtM(totRem) + '</div><div class="sub">' + (100-pctN(totPct)).toFixed(1) + '% of total budget</div></div>' +
       '<div class="stat-card animate-in delay-3"><div class="label">Current Phase</div><div class="value" style="font-size:1.15rem">' + curPhase + '</div><div class="sub">' + curPct.toFixed(0) + '% complete</div></div>' +
       '<div class="stat-card animate-in delay-4"><div class="label">Target Completion</div><div class="value" style="font-size:1.15rem">' + targetComp + '</div><div class="sub">Site complete</div></div>' +
       '</div>' +
-
       '<div class="section animate-in delay-3"><div class="section-header"><h2>Budget Allocation</h2><span class="pill">' + fmtM(totBudget) + ' Total</span></div><div class="section-body"><div class="donut-section"><div class="donut-container"><svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">' + dSVG + '<text x="100" y="94" text-anchor="middle" font-family="DM Serif Display,serif" font-size="22" fill="#003262">' + gmpPct + '%</text><text x="100" y="114" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="#8d95a0">Construction</text></svg></div><div class="donut-legend">' +
       '<div class="legend-item"><div class="legend-swatch" style="background:#003262"></div><span class="legend-label">Construction (GMP)</span><span class="legend-value">' + fmtM(gmpV) + '</span></div>' +
       '<div class="legend-item"><div class="legend-swatch" style="background:#0a4a8a"></div><span class="legend-label">A/E Services</span><span class="legend-value">' + fmtM(aeV) + '</span></div>' +
@@ -308,19 +381,14 @@ async function build() {
       '<div class="legend-item"><div class="legend-swatch" style="background:#e8d5a0"></div><span class="legend-label">FF&amp;E / Technology</span><span class="legend-value">' + fmtM(ffV) + '</span></div>' +
       '<div class="legend-item"><div class="legend-swatch" style="background:#8d95a0"></div><span class="legend-label">Other (Misc, Feasibility, Contingency, CM)</span><span class="legend-value">' + fmtM(otV) + '</span></div>' +
       '</div></div></div></div>' +
-
       '<div class="section animate-in delay-4"><div class="section-header"><h2>Budget by Category</h2></div><div class="section-body" style="overflow-x:auto"><table class="budget-table"><thead><tr><th>Category</th><th>Budget</th><th>Spent</th><th>Remaining</th><th style="width:120px">% Spent</th></tr></thead><tbody>' + budgetHTML + '</tbody></table></div></div>' +
-
       '<div class="section animate-in delay-5"><div class="section-header"><h2>Construction Packages</h2><span class="pill">Budget vs Actual</span></div><div class="section-body" style="overflow-x:auto"><table class="pkg-table"><thead><tr><th>Package</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Bid Date</th><th>Status</th></tr></thead><tbody>' + pkgHTML + '</tbody></table></div></div>' +
-
       '<div class="section animate-in delay-5"><div class="section-header"><h2>Project Schedule</h2></div><div class="section-body">' +
       '<div class="sub-section-title">Project Phases</div><div class="phase-list">' + phaseHTML(sPhases, false) + '</div>' +
       (sP1.length ? '<div class="sub-section-title">Construction Phase 1</div><div class="phase-list">' + phaseHTML(sP1, true) + '</div>' : '') +
       (sP2.length ? '<div class="sub-section-title">Phase 2 — Site &amp; Demo</div><div class="phase-list">' + phaseHTML(sP2, true) + '</div>' : '') +
       '</div></div>' +
-
       '<div class="section animate-in delay-6"><div class="section-header"><h2>Key Procurement Milestones</h2></div><div class="section-body"><div class="milestone-list">' + msHTML + '</div></div></div>' +
-
       '<div class="footer">Lexington High School Building Project &middot; Lexington Public Schools &middot; Lexington, MA<br>For questions, visit <a href="https://lps.lexingtonma.org" target="_blank">lps.lexingtonma.org</a></div>';
 
   } catch (err) {
