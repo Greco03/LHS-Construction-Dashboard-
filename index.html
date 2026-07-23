@@ -281,16 +281,16 @@ var hlMoment='',hlChallenge='',hlPositive='';
 var hlSec=fr('monthly highlights');
 if(hlSec>=0){for(var i=hlSec+1;i<Math.min(hlSec+6,d.length);i++){
   var lbl=getStr(safe(d,i,0)).toLowerCase();if(lbl.includes('moment'))hlMoment=getStr(safe(d,i,1));
-  if(lbl.includes('challenge'))hlChallenge=getStr(safe(d,i,1));if(lbl.includes('positive'))hlPositive=getStr(safe(d,i,1))}}
+  if(lbl.includes('challenge'))hlChallenge=getStr(safe(d,i,1));if(lbl.includes('key development'))hlPositive=getStr(safe(d,i,1))}}
 // Fallback: search DASHBOARD V2 for individual labels
 if(!hlMoment){var mr=fr('moment of the month');if(mr>=0)hlMoment=getStr(safe(d,mr,1))}
 if(!hlChallenge){var cr2=fr('upcoming challenge');if(cr2>=0)hlChallenge=getStr(safe(d,cr2,1))}
-if(!hlPositive){var pr2=fr('positive result');if(pr2>=0)hlPositive=getStr(safe(d,pr2,1))}
+if(!hlPositive){var pr2=fr('key development');if(pr2>=0)hlPositive=getStr(safe(d,pr2,1))}}
 // Fallback 2: read directly from Monthly Highlights tab
 if(!hlMoment&&hlTab){for(var i=0;i<hlTab.length;i++){var lbl=getStr(safe(hlTab,i,0)).toLowerCase();
   if(lbl.includes('moment'))hlMoment=getStr(safe(hlTab,i,1));
   if(lbl.includes('challenge'))hlChallenge=getStr(safe(hlTab,i,1));
-  if(lbl.includes('positive'))hlPositive=getStr(safe(hlTab,i,1))}}
+if(lbl.includes('key development'))hlPositive=getStr(safe(hlTab,i,1))}}
 log('Highlights: moment='+(hlMoment?'YES':'NO')+' challenge='+(hlChallenge?'YES':'NO')+' positive='+(hlPositive?'YES':'NO'));
 
 // ═══ RENDER ═══
